@@ -1,0 +1,54 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e5c500c9-bc97-4387-81a5-5004d1931f59",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://aec356baf7bb.ngrok-free.app/produtos/3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "41fc1f26-1c63-4b03-b9fe-758b018ca69d",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5e2b9e59-02b6-4224-922b-bc9d0fb6cbf3",
+  "meta": {
+    "instanceId": "cc20f2d42d1a5d30ebde1a20814dd7700e8deade6c6db5904071f921e8a33de4"
+  },
+  "id": "G3cKa3LvF4fvSsLZ",
+  "tags": []
+}
