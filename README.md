@@ -20,14 +20,16 @@ Demonstrar domínio técnico e iniciativa na criação de uma aplicação backen
 
 app-retta-flask/
 ├── app/
-│ ├── init.py # Inicialização do app Flask
-│ ├── routes.py # Rotas da API
-│ └── controllers/ # Lógica separada por domínio (futuramente)
-├── produtos.json # Base de dados simulada (mock)
-├── requirements.txt # Dependências do projeto
-├── run.py # Arquivo principal para executar a aplicação
-├── README.md # Documentação do projeto
-└── .env # (opcional) variáveis de ambiente
+│   ├── __init__.py          # Inicialização do app Flask
+│   ├── routes.py            # Rotas da API
+│   └── __pycache__/         # Cache de bytecode Python
+├── n8n/
+│   └── fluxo_sugestao_artigos_n8n.json # Workflow n8n
+├── produtos.json            # Base de dados simulada (mock)
+├── requirements.txt         # Dependências do projeto
+├── run.py                   # Arquivo principal para executar a aplicação
+├── README.md                # Documentação do projeto
+└── venv/                    # Ambiente virtual Python
 
 
 ## 📡 Endpoints Disponíveis
