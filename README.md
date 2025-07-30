@@ -62,3 +62,24 @@ python run.py
 
 Iniciar ngrok (instalado previamente)
 # O ngrok deve ser instalado em outro terminal e com a Api rodando. 
+
+ngrok http 5000
+
+
+🔁 Integração com o n8n
+📋 Fluxo: fluxo_produtos_n8n.json
+Este fluxo realiza os seguintes passos:
+
+Manual Trigger – Inicia o fluxo manualmente via botão.
+
+HTTP Request – Consome a rota /produtos da API Flask exposta via ngrok.
+
+Code Node (HTML) – Gera um HTML com os 10 primeiros produtos.
+
+Code Node (refino) – Converte os dados para o formato adequado ao Google Sheets.
+
+Google Sheets Node – Insere ou atualiza os produtos na planilha Google.
+
+Esse processo demonstra a interoperabilidade entre uma API REST e uma automação em ambiente low-code.
+
+

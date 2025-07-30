@@ -6,7 +6,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
+        -144,
         0
       ],
       "id": "e5c500c9-bc97-4387-81a5-5004d1931f59",
@@ -14,17 +14,89 @@
     },
     {
       "parameters": {
-        "url": "https://aec356baf7bb.ngrok-free.app/produtos/3",
-        "options": {}
+        "url": "https://aec356baf7bb.ngrok-free.app/produtos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {},
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        208,
+        48,
         0
       ],
       "id": "41fc1f26-1c63-4b03-b9fe-758b018ca69d",
       "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const htmlParts = [];\n\nfor (let i = 0; i < Math.min(10, items.length); i++) {\n  const produto = items[i].json;\n  \n  htmlParts.push(`\n    <h2>Produto ${i + 1}</h2>\n    <p><strong>Código:</strong> ${produto.codigo || 'N/A'}</p>\n    <p><strong>Código de Barras:</strong> ${produto.codigoBarras || 'N/A'}</p>\n    <p><strong>Descrição:</strong> ${produto.descricao || 'N/A'}</p>\n    <p><strong>ID:</strong> ${produto.id || 'N/A'}</p>\n    <p><strong>Referência:</strong> ${produto.referencia || 'N/A'}</p>\n    <hr>\n  `);\n}\n\nconst html = `\n  <html>\n    <body>\n      <h1>Relatório dos 10 primeiros produtos</h1>\n      ${htmlParts.join('\\n')}\n    </body>\n  </html>\n`;\n\nreturn [\n  {\n    json: {\n      html: html\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "81d8ec7d-0080-407e-b93a-99cef0251d36",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega só os 10 primeiros produtos\nconst primeiros10 = items.slice(0, 10);\n\nreturn primeiros10.map(item => {\n  const produto = item.json;\n  return {\n    json: {\n      codigo: produto.codigo || null,\n      codigoBarras: produto.codigoBarras || null,\n      descricao: produto.descricao || null,\n      id: produto.id || null,\n      referencia: produto.referencia || null,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "9c9a6ef3-fcf5-4f82-830b-a6b0d3a31730",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        608,
+        0
+      ],
+      "id": "35cec9a5-0e73-41c5-8609-2c03fa586146",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LalHYmeyysw6NqZ7",
+          "name": "Google Sheets account 2"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -39,14 +111,48 @@
           }
         ]
       ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "5e2b9e59-02b6-4224-922b-bc9d0fb6cbf3",
+  "versionId": "e2820865-52f2-4411-842a-b4674ce7ae38",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "cc20f2d42d1a5d30ebde1a20814dd7700e8deade6c6db5904071f921e8a33de4"
   },
   "id": "G3cKa3LvF4fvSsLZ",
