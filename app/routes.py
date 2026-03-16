@@ -1,78 +1,176 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 import json
 import os
+import requests
+import uuid
+from reportlab.pdfgen import canvas
+from app.services.pdf_service import gerar_pdf
 
-bp = Blueprint('routes', __name__)
+routes = Blueprint("routes", __name__)
 
-# Caminho absoluto para o JSON
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, '..', 'produtos.json')
-
-
-# Função para carregar os produtos
-def carregar_produtos():
-    with open(DATA_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+DATA_FILE = os.path.join(os.path.dirname(__file__), "../produtos.json")
 
 
+# ======== ENVIAR PARA N8N ========
+@routes.route("/enviar_sugestao", methods=["POST"])
+def enviar_sugestao():
+    dados = request.json
 
-# Função para salvar os produtos
-def salvar_produtos(produtos):
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(produtos, f, indent=4, ensure_ascii=False)
+    n8n_webhook = "https://SEU_N8N_DOMAIN/webhook/ID_DO_FLUXO"
+
+    try:
+        r = requests.post(n8n_webhook, json=dados)
+        r.raise_for_status()
+
+        return jsonify({
+            "status": "enviado",
+            "n8n_status": r.status_code
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 500
 
 
-# Rota: GET /produtos — listar todos os produtos
-@bp.route('/produtos', methods=['GET'])
+# ======== LISTAR PRODUTOS ========
+@routes.route("/produtos", methods=["GET"])
 def listar_produtos():
-    produtos = carregar_produtos()
-    return jsonify(produtos)
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    return jsonify(data)
 
 
-# Rota: GET /produtos/<id> — obter um produto por id
-@bp.route('/produtos/<int:id>', methods=['GET'])
-def obter_produto(id):
-    produtos = carregar_produtos()
-    for produto in produtos:
-        if produto['id'] == id:
-            return jsonify(produto)
-    return jsonify({'erro': 'Produto não encontrado'}), 404
-
-
-# Rota: POST /produtos — adicionar um novo produto
-@bp.route('/produtos', methods=['POST'])
+# ======== ADICIONAR PRODUTO ========
+@routes.route("/produtos", methods=["POST"])
 def adicionar_produto():
-    novo_produto = request.get_json()
-    produtos = carregar_produtos()
-    novo_produto['id'] = max([p['id'] for p in produtos], default=0) + 1
-    produtos.append(novo_produto)
-    salvar_produtos(produtos)
+    novo_produto = request.json
+
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    data.append(novo_produto)
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
     return jsonify(novo_produto), 201
 
 
-# Rota: PUT /produtos/<id> — atualizar um produto
-@bp.route('/produtos/<int:id>', methods=['PUT'])
-def atualizar_produto(id):
-    dados = request.get_json()
-    produtos = carregar_produtos()
+# ======== ATUALIZAR PRODUTO ========
+@routes.route("/produtos/<int:produto_id>", methods=["PUT"])
+def atualizar_produto(produto_id):
+    atualizado = request.json
+
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    for produto in data:
+        if produto.get("id") == produto_id:
+            produto.update(atualizado)
+
+            with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+
+            return jsonify(produto), 200
+
+    return jsonify({"erro": "Produto não encontrado"}), 404
+
+
+# ======== DELETAR PRODUTO ========
+@routes.route("/produtos/<int:produto_id>", methods=["DELETE"])
+def deletar_produto(produto_id):
+
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    for i, produto in enumerate(data):
+
+        if produto.get("id") == produto_id:
+
+            deletado = data.pop(i)
+
+            with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+
+            return jsonify(deletado), 200
+
+    return jsonify({"erro": "Produto não encontrado"}), 404
+# ======== RECEBER DADOS DO TYPEBOT ========
+# ======== RECEBER DADOS DO TYPEBOT ========
+@routes.route("/typebot", methods=["POST"])
+def receber_typebot():
+
+    dados = request.json
+
+    nome = dados.get("nome")
+    produto_busca = dados.get("produto")
+
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    encontrados = []
+
+    for produto in data:
+        if produto_busca.lower() in produto.get("descricao", "").lower():
+            encontrados.append(produto)
+
+    return jsonify({
+        "usuario": nome,
+        "produtos_encontrados": encontrados
+    })
+ # ======== BUSCAR PRODUTO POR NOME ========
+@routes.route("/buscar", methods=["GET"])
+def buscar_produto():
+
+    nome = request.args.get("nome")
+
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+
+    resultados = []
+
+    for produto in data:
+        descricao = produto.get("descricao", "").lower()
+
+        if nome.lower() in descricao:
+            resultados.append(produto)
+
+    return jsonify(resultados)
+
+
+    # ======== GERAR PDF ========
+@routes.route("/gerar-pdf", methods=["POST"])
+def gerar_pdf():
+
+    dados = request.json
+
+    nome = dados.get("nome")
+    produto_busca = dados.get("produto")
+
+    with open(DATA_FILE, "r") as f:
+        produtos = json.load(f)
+
+    produto_encontrado = None
+
     for produto in produtos:
-        if produto['id'] == id:
-            produto.update(dados)
-            salvar_produtos(produtos)
-            return jsonify(produto)
-    return jsonify({'erro': 'Produto não encontrado'}), 404
+        if produto_busca.lower() in produto.get("descricao","").lower():
+            produto_encontrado = produto
+            break
 
+    if not produto_encontrado:
+        return jsonify({"erro": "Produto não encontrado"}), 404
 
-# Rota: DELETE /produtos/<id> — remover um produto
-@bp.route('/produtos/<int:id>', methods=['DELETE'])
-def remover_produto(id):
-    produtos = carregar_produtos()
-    novos_produtos = [p for p in produtos if p['id'] != id]
-    if len(novos_produtos) == len(produtos):
-        return jsonify({'erro': 'Produto não encontrado'}), 404
-    salvar_produtos(novos_produtos)
-    return jsonify({'mensagem': 'Produto removido com sucesso'})
+    arquivo = f"pdfs/{uuid.uuid4()}.pdf"
 
-@bp.route('/', methods=['GET'])
-def home():
-    return jsonify({"mensagem": "API de produtos está no ar!"})
+    c = canvas.Canvas(arquivo)
+
+    c.drawString(100, 750, "Solicitação de Produto")
+    c.drawString(100, 720, f"Cliente: {nome}")
+    c.drawString(100, 700, f"Produto: {produto_encontrado['descricao']}")
+
+    c.save()
+
+    return send_file(arquivo, as_attachment=True)
